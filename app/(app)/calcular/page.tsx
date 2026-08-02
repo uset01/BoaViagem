@@ -59,11 +59,13 @@ export default function CalcularPage() {
   const [freteValor, setFreteValor] = useState("");
   const [truckType, setTruckType] = useState<TruckTypeId>("truck");
 
+  // Começa vazio (não "0,00") — o placeholder "—" indica "será calculado"
+  // até a distância ser preenchida.
   const [custos, setCustos] = useState<Record<CustoKey, string>>({
-    diesel: "0,00",
-    pedagio: "0,00",
-    manutencao: "0,00",
-    alimentacao: "0,00",
+    diesel: "",
+    pedagio: "",
+    manutencao: "",
+    alimentacao: "",
   });
   const [touchedFields, setTouchedFields] = useState<Set<CustoKey>>(new Set());
   const [valoresMedios, setValoresMedios] = useState<ValoresMedios>(VALORES_MEDIOS_PADRAO);
@@ -142,20 +144,31 @@ export default function CalcularPage() {
   }, [modo, kmManual, kmCidades]);
 
   // Recalcula os custos padrão quando km/caminhão/médias mudam, mas nunca
-  // sobrescreve um campo que o usuário já editou manualmente.
+  // sobrescreve um campo que o usuário já editou manualmente. Sem km ainda,
+  // deixa vazio (mostra "será calculado") em vez de forçar "0,00".
   useEffect(() => {
     const padrao = calcularCustosPadrao(km, truckType, valoresMedios);
     setCustos((prev) => {
       const next = { ...prev };
       CUSTO_ORDEM.forEach((key) => {
         if (!touchedFields.has(key)) {
-          next[key] = toMoneyString(padrao[key]);
+          next[key] = km > 0 ? toMoneyString(padrao[key]) : "";
         }
       });
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [km, truckType, valoresMedios]);
+
+  // Preenche um exemplo pronto pra quem quer só ver como funciona antes de
+  // digitar os próprios números.
+  function handlePreencherExemplo() {
+    setModo("km");
+    setKmManual("1100");
+    setFreteValor(toMoneyString(7000));
+    setTruckType("truck");
+    setTouchedFields(new Set());
+  }
 
   function handleCustoChange(key: CustoKey, value: string) {
     setCustos((prev) => ({ ...prev, [key]: value }));
@@ -245,9 +258,15 @@ export default function CalcularPage() {
   }
 
   const freteCard = (
-    <Card padding="p-4" className="space-y-2">
+    <Card padding="p-4" className="space-y-2 border border-accent/25">
       <p className="text-sm font-medium text-ink-secondary">Valor do frete</p>
-      <MoneyField value={freteValor} onChange={setFreteValor} large aria-label="Valor do frete oferecido" />
+      <MoneyField
+        value={freteValor}
+        onChange={setFreteValor}
+        placeholder="Ex: 7000"
+        large
+        aria-label="Valor do frete oferecido"
+      />
     </Card>
   );
 
@@ -261,9 +280,24 @@ export default function CalcularPage() {
           className="w-full"
         />
 
+        {!resultado && !canCalcular && (
+          <div className="space-y-1.5 text-center">
+            <p className="text-sm text-ink-secondary">
+              Preencha a distância e o valor do frete para ver se a viagem compensa
+            </p>
+            <button
+              type="button"
+              onClick={handlePreencherExemplo}
+              className="text-xs font-semibold text-accent"
+            >
+              Ver exemplo
+            </button>
+          </div>
+        )}
+
         {modo === "cidades" ? (
           <>
-            <Card padding="p-4" className="space-y-3">
+            <Card padding="p-4" className="space-y-3 border border-accent/25">
               <div className="grid grid-cols-2 gap-3">
                 <AutocompleteInput
                   label="Origem"
@@ -313,7 +347,7 @@ export default function CalcularPage() {
           </>
         ) : (
           <div className="grid grid-cols-2 items-start gap-3">
-            <Card padding="p-4" className="space-y-2">
+            <Card padding="p-4" className="space-y-2 border border-accent/25">
               <label className="block text-sm font-medium text-ink-secondary">Distância</label>
               <div className="flex items-center gap-2 rounded-2xl border border-divider bg-surface px-4 py-4">
                 <input
@@ -321,8 +355,8 @@ export default function CalcularPage() {
                   inputMode="decimal"
                   value={kmManual}
                   onChange={(e) => setKmManual(e.target.value)}
-                  placeholder="0"
-                  className="w-full min-w-0 bg-transparent text-2xl font-extrabold text-ink outline-none placeholder:text-ink-tertiary"
+                  placeholder="Ex: 1100"
+                  className="w-full min-w-0 bg-transparent text-2xl font-extrabold text-ink outline-none placeholder:text-sm placeholder:font-semibold placeholder:text-ink-tertiary"
                 />
                 <span className="shrink-0 text-2xl font-bold text-ink-tertiary">km</span>
               </div>
@@ -369,6 +403,7 @@ export default function CalcularPage() {
               <MoneyField
                 value={custos[key]}
                 onChange={(v) => handleCustoChange(key, v)}
+                placeholder={km > 0 ? "0,00" : "—"}
                 className="w-36"
                 aria-label={CUSTO_LABELS[key]}
               />
@@ -390,7 +425,7 @@ export default function CalcularPage() {
           disabled={!canCalcular}
           className="w-full rounded-full bg-accent py-4 text-[15px] font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:bg-divider disabled:text-ink-tertiary"
         >
-          {resultado ? "Recalcular" : "Ver se compensa"}
+          {!canCalcular ? "Preencha os dados para calcular" : resultado ? "Recalcular" : "Ver se compensa"}
         </button>
 
         {resultado && (

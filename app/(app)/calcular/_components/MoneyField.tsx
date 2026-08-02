@@ -37,7 +37,7 @@ export function MoneyField({
         className
       )}
     >
-      <span className={cn("shrink-0 font-bold text-ink-tertiary", large ? "text-2xl" : "text-sm")}>
+      <span className={cn("shrink-0 font-bold text-ink-tertiary", large ? "text-xl" : "text-sm")}>
         R$
       </span>
       <input
@@ -51,7 +51,9 @@ export function MoneyField({
           "w-full min-w-0 bg-transparent outline-none transition-colors duration-200 placeholder:text-ink-tertiary",
           hasValue ? "text-ink" : "text-ink-secondary",
           hasValue && (pulseFlip ? "animate-number-pulse-a" : "animate-number-pulse-b"),
-          large ? "text-2xl font-extrabold" : "text-right text-[15px] font-semibold"
+          large
+            ? "text-xl font-extrabold placeholder:text-sm placeholder:font-semibold"
+            : "text-right text-[15px] font-semibold"
         )}
       />
     </div>

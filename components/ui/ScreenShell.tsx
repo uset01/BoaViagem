@@ -83,6 +83,15 @@ export function ScreenShell({
                 "linear-gradient(180deg, transparent 0%, transparent 50%, rgba(0,0,0,0.55) 100%)",
             }}
           />
+          {/* Camada extra bem sutil (máx. 5% de preto) por cima de toda a
+          foto — só pra integrar um pouco mais com o resto da UI, sem afetar
+          a legibilidade que o gradiente acima já garante. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 100%)",
+            }}
+          />
           {showBrand && (
             <div
               className="absolute inset-x-0 top-0 z-10 flex justify-center px-5"
