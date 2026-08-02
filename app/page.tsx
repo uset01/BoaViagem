@@ -1,17 +1,13 @@
 import Link from "next/link";
 import {
-  Menu,
-  TriangleAlert,
   Calculator,
   ChevronRight,
   Smartphone,
-  Zap,
   ShieldCheck,
   Scale,
   CircleCheck,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { IconCircle } from "@/components/ui/IconCircle";
 
 // Foto de caminhão específica pra landing (diferente da foto de estrada
 // usada em /calcular e nas outras telas do app).
@@ -88,27 +84,16 @@ export default function LandingPage() {
           className="relative z-10 flex h-full flex-col px-5"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          {/* 1. Cabeçalho: logo + nome à esquerda, menu à direita */}
-          <div className="flex items-center justify-between pt-3">
-            <div className="flex items-center gap-1.5 text-accent">
-              <LogoMark />
-              <span className="text-base font-bold text-surface">BoaViagem</span>
-            </div>
-            <Link href="/login" aria-label="Menu" className="p-1 text-surface">
-              <Menu size={22} strokeWidth={2} />
-            </Link>
+          {/* 1. Cabeçalho: logo + nome */}
+          <div className="flex items-center gap-1.5 pt-3 text-accent">
+            <LogoMark />
+            <span className="text-base font-bold text-surface">BoaViagem</span>
           </div>
 
           <div className="flex flex-1 flex-col items-start justify-center gap-4 pb-8 text-left">
-            {/* Título, subtítulo e badge ficam limitados a ~68% da largura
-            pra nunca atravessar por cima do caminhão, à direita. */}
+            {/* Título e subtítulo ficam limitados a ~68% da largura pra
+            nunca atravessar por cima do caminhão, à direita. */}
             <div className="max-w-[68%] space-y-4">
-              {/* 2. Badge de aviso — pílula escura translúcida */}
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-surface backdrop-blur-sm">
-                <TriangleAlert size={13} strokeWidth={2} className="shrink-0 text-amber-400" />
-                A maioria dos fretes dá menos lucro do que parece
-              </span>
-
               {/* 3. Título com destaque de cor */}
               <h1 className="text-[23px] font-extrabold leading-tight text-surface">
                 Não aceite frete
@@ -135,9 +120,6 @@ export default function LandingPage() {
             <div className="flex w-full items-center justify-center gap-1.5 text-xs text-surface/60">
               <Smartphone size={13} strokeWidth={2} className="shrink-0" />
               <span>Login rápido por celular</span>
-              <span aria-hidden="true">·</span>
-              <Zap size={13} strokeWidth={2} className="shrink-0" />
-              <span>7 dias grátis pra testar</span>
             </div>
           </div>
         </div>
@@ -159,7 +141,7 @@ export default function LandingPage() {
             <div className="space-y-4">
               {PASSOS.map((passo) => (
                 <div key={passo.numero} className="flex items-center gap-3">
-                  <IconCircle icon={<span className="text-sm font-bold">{passo.numero}</span>} active />
+                  <span className="w-7 shrink-0 text-2xl font-extrabold text-ink">{passo.numero}</span>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-ink">{passo.titulo}</p>
                     <p className="text-sm text-ink-secondary">{passo.descricao}</p>
