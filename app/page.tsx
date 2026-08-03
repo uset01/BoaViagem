@@ -7,22 +7,10 @@ import {
   Scale,
   CircleCheck,
 } from "lucide-react";
-import { Card } from "@/components/ui/Card";
 
 // Foto de caminhão específica pra landing (diferente da foto de estrada
 // usada em /calcular e nas outras telas do app).
 const HERO_IMAGE_SRC = "/ChatGPT Image 2 de ago. de 2026, 14_42_57.png";
-
-// Marca abstrata (duas formas diagonais conectadas, lembrando uma
-// estrada estilizada) — não é um ícone de biblioteca, é um SVG próprio.
-function LogoMark() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path d="M4 26 L14 6 L20 6 L10 26 Z" fill="currentColor" opacity="0.55" />
-      <path d="M14 26 L24 6 L30 6 L20 26 Z" fill="currentColor" />
-    </svg>
-  );
-}
 
 const PASSOS = [
   {
@@ -56,7 +44,7 @@ export default function LandingPage() {
       {/* Hero próprio da landing, com a foto do caminhão específica pra essa
       tela (diferente da foto de estrada do resto do app) — composição
       própria (badge, título de duas cores, subtítulo e CTA dentro da foto). */}
-      <div className="relative overflow-hidden" style={{ height: 480 }}>
+      <div className="relative overflow-hidden" style={{ height: 400 }}>
         <img
           src={encodeURI(HERO_IMAGE_SRC)}
           alt=""
@@ -84,10 +72,10 @@ export default function LandingPage() {
           className="relative z-10 flex h-full flex-col px-5"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          {/* 1. Cabeçalho: logo + nome */}
-          <div className="flex items-center gap-1.5 pt-3 text-accent">
-            <LogoMark />
-            <span className="text-base font-bold text-surface">BoaViagem</span>
+          {/* 1. Cabeçalho: logo (marca + wordmark em um só arquivo) */}
+          <div className="pt-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-header.png" alt="BoaViagem" className="h-6 w-auto" />
           </div>
 
           <div className="flex flex-1 flex-col items-start justify-center gap-4 pb-8 text-left">
@@ -162,26 +150,20 @@ export default function LandingPage() {
             <p className="text-sm font-semibold text-ink">{FRASE_REAL_AQUI}</p>
           </Card> */}
 
-          <Card padding="p-6" className="space-y-4 text-center">
+          <div className="space-y-4 rounded-xl border border-zinc-200 bg-surface px-6 py-5 text-center">
             <div>
               <p className="text-sm font-semibold text-ink-secondary">Plano BoaViagem</p>
-              <span className="mt-2 inline-block rounded-full bg-warning-bg px-3 py-1 text-xs font-bold text-warning-text">
-                🔥 Oferta de lançamento
-              </span>
 
               <div className="mt-3 flex items-center justify-center gap-2">
                 <span className="rounded-full bg-danger-bg px-2 py-0.5 text-xs font-bold text-danger">-29%</span>
                 <span className="text-sm font-medium text-ink-tertiary line-through">R$ 34,99</span>
               </div>
-              <p className="mt-1 text-4xl font-extrabold text-ink">
-                R$ 24,99<span className="text-base font-medium text-ink-secondary">/mês</span>
+              <p className="mt-1 text-5xl font-extrabold text-ink">
+                R$ 24,99<span className="text-sm font-medium text-ink-secondary">/mês</span>
               </p>
               <p className="mt-1 text-sm text-ink-secondary">Cancele quando quiser.</p>
 
-              <p className="mt-3 text-xs text-ink-tertiary">
-                Sem compromisso • Cancele quando quiser • Dados seguros
-              </p>
-              <p className="mt-2 text-xs font-medium text-warning-text">
+              <p className="mt-3 text-xs font-medium text-warning-text">
                 Essa condição de lançamento pode acabar a qualquer momento.
               </p>
             </div>
@@ -191,7 +173,7 @@ export default function LandingPage() {
             >
               Assinar e calcular agora
             </Link>
-          </Card>
+          </div>
         </div>
       </div>
     </div>
