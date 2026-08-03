@@ -5,10 +5,10 @@ import { ScreenShell } from "@/components/ui/ScreenShell";
 import { Card } from "@/components/ui/Card";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
+import { BottomSheetSelect } from "@/components/ui/BottomSheetSelect";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { IconCircle } from "@/components/ui/IconCircle";
 import { FuelIcon, TollIcon, WrenchIcon, FoodIcon } from "@/components/icons";
-import { TruckTypeIcon } from "@/components/TruckTypeIcon";
 import { NAV_ITEMS } from "@/components/nav-items";
 import { CIDADES, calcularDistanciaKm, encontrarCidadePorNome } from "@/lib/cidades";
 import {
@@ -21,11 +21,32 @@ import {
   type TruckTypeId,
   type ValoresMedios,
 } from "@/lib/calculo-custos";
+import {
+  TABELAS_ANTT,
+  TIPOS_CARGA_ANTT,
+  eixosAnttMaisProximo,
+  type TabelaAntt,
+  type TipoCargaAntt,
+} from "@/lib/antt-tabela-oficial";
 import { formatBRLAprox, parseMoney, toMoneyString } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 import { MoneyField } from "./_components/MoneyField";
 import { ResultadoCard, type ResultadoCalculo, type SaveState } from "@/components/ResultadoCard";
+
+const OPCOES_TABELA_ANTT = (Object.keys(TABELAS_ANTT) as TabelaAntt[]).map((id) => ({
+  label: TABELAS_ANTT[id].label,
+  value: id,
+}));
+
+// O seletor "Número de Eixos" (em "Seu caminhão") mostra os tipos de
+// caminhão já com a contagem de eixos no rótulo — um só seletor cobre tanto
+// a estimativa de consumo (por tipo) quanto os eixos usados no piso ANTT.
+const OPCOES_CAMINHAO = TRUCK_TYPES.map((t) => ({
+  label: `${t.label} — ${t.eixos} eixos`,
+  value: t.id,
+}));
+
+const OPCOES_TIPO_CARGA = TIPOS_CARGA_ANTT.map((t) => ({ label: t.label, value: t.id }));
 
 const CUSTO_ICONS: Record<CustoKey, React.ReactNode> = {
   diesel: <FuelIcon />,
@@ -58,6 +79,8 @@ export default function CalcularPage() {
   const [kmManual, setKmManual] = useState("");
   const [freteValor, setFreteValor] = useState("");
   const [truckType, setTruckType] = useState<TruckTypeId>("truck");
+  const [tabelaAntt, setTabelaAntt] = useState<TabelaAntt>("A");
+  const [tipoCarga, setTipoCarga] = useState<TipoCargaAntt>("carga_geral");
 
   // Começa vazio (não "0,00") — o placeholder "—" indica "será calculado"
   // até a distância ser preenchida.
@@ -167,6 +190,8 @@ export default function CalcularPage() {
     setKmManual("1100");
     setFreteValor(toMoneyString(7000));
     setTruckType("truck");
+    setTabelaAntt("A");
+    setTipoCarga("carga_geral");
     setTouchedFields(new Set());
   }
 
@@ -222,6 +247,9 @@ export default function CalcularPage() {
       distanciaKm: km,
       truckLabel: getTruckType(truckType).label,
       eixos: getTruckType(truckType).eixos,
+      eixosAntt: eixosAnttMaisProximo(getTruckType(truckType).eixos),
+      tabelaAntt,
+      tipoCarga,
       frete: freteNumero,
       custos: custosNumericos,
       custoTotal,
@@ -298,7 +326,7 @@ export default function CalcularPage() {
         {modo === "cidades" ? (
           <>
             <Card padding="p-4" className="space-y-3 border border-accent/25">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
                 <AutocompleteInput
                   label="Origem"
                   value={origemTexto}
@@ -346,7 +374,7 @@ export default function CalcularPage() {
             {freteCard}
           </>
         ) : (
-          <div className="grid grid-cols-2 items-start gap-3">
+          <div className="space-y-3">
             <Card padding="p-4" className="space-y-2 border border-accent/25">
               <label className="block text-sm font-medium text-ink-secondary">Distância</label>
               <div className="flex items-center gap-2 rounded-2xl border border-divider bg-surface px-4 py-4">
@@ -368,30 +396,36 @@ export default function CalcularPage() {
 
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-ink">Seu caminhão</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {TRUCK_TYPES.map((t) => {
-              const active = t.id === truckType;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTruckType(t.id)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-[20px] border bg-surface px-4 py-3.5 text-left shadow-card transition-colors",
-                    active ? "border-accent" : "border-transparent"
-                  )}
-                >
-                  <IconCircle icon={<TruckTypeIcon src={t.iconSrc} active={active} />} active={active} />
-                  <div>
-                    <p className={cn("text-sm font-semibold", active ? "text-ink" : "text-ink-secondary")}>
-                      {t.label}
-                    </p>
-                    <p className="text-xs text-ink-tertiary">{t.eixos} eixos</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <Card padding="p-4">
+            <BottomSheetSelect
+              label="Número de Eixos"
+              options={OPCOES_CAMINHAO}
+              value={truckType}
+              onChange={(v) => setTruckType(v as TruckTypeId)}
+            />
+          </Card>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-ink">Piso mínimo ANTT</h2>
+          <Card padding="p-4" className="space-y-3">
+            <div>
+              <BottomSheetSelect
+                label="Tipo de frete"
+                options={OPCOES_TABELA_ANTT}
+                value={tabelaAntt}
+                onChange={(v) => setTabelaAntt(v as TabelaAntt)}
+              />
+              <p className="mt-1.5 text-xs text-ink-tertiary">{TABELAS_ANTT[tabelaAntt].descricao}</p>
+            </div>
+            <BottomSheetSelect
+              label="Tipo de carga"
+              options={OPCOES_TIPO_CARGA}
+              value={tipoCarga}
+              onChange={(v) => setTipoCarga(v as TipoCargaAntt)}
+              searchable
+            />
+          </Card>
         </section>
 
         <Card className="space-y-1" padding="p-5">

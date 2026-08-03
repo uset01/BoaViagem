@@ -3,7 +3,15 @@
 import { forwardRef, useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { AlertTriangleIcon } from "@/components/icons";
-import { calcularPisoAntt } from "@/lib/antt-piso";
+import {
+  calcularPisoAnttOficial,
+  eixosAnttMaisProximo,
+  TABELAS_ANTT,
+  TIPOS_CARGA_ANTT,
+  type EixosAntt,
+  type TabelaAntt,
+  type TipoCargaAntt,
+} from "@/lib/antt-tabela-oficial";
 import { CUSTO_LABELS, type CustoKey } from "@/lib/calculo-custos";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -17,6 +25,13 @@ export interface ResultadoCalculo {
   custos: Record<CustoKey, number>;
   custoTotal: number;
   lucro: number;
+  /** Ausentes em viagens antigas salvas antes dessa tabela existir — nesse
+   * caso o card simplesmente não mostra a comparação com o piso ANTT. */
+  tabelaAntt?: TabelaAntt;
+  tipoCarga?: TipoCargaAntt;
+  /** Eixos escolhidos direto no seletor "Número de Eixos" do formulário.
+   * Se ausente (viagem antiga), cai pro eixos do tipo de caminhão. */
+  eixosAntt?: EixosAntt;
 }
 
 export type SaveState = "idle" | "saving" | "success" | "error";
@@ -41,8 +56,16 @@ export const ResultadoCard = forwardRef<HTMLDivElement, ResultadoCardProps>(func
   }, [resultado]);
 
   const lucrativo = resultado.lucro >= 0;
-  const pisoAntt = calcularPisoAntt(resultado.distanciaKm, resultado.eixos);
-  const abaixoDoPiso = pisoAntt > 0 && resultado.frete < pisoAntt;
+  const piso =
+    resultado.tabelaAntt && resultado.tipoCarga
+      ? calcularPisoAnttOficial(
+          resultado.distanciaKm,
+          resultado.eixosAntt ?? eixosAnttMaisProximo(resultado.eixos),
+          resultado.tabelaAntt,
+          resultado.tipoCarga
+        )
+      : null;
+  const abaixoDoPiso = Boolean(piso?.disponivel) && piso!.pisoTotal > 0 && resultado.frete < piso!.pisoTotal;
 
   return (
     <Card ref={ref} padding="p-5">
@@ -68,13 +91,28 @@ export const ResultadoCard = forwardRef<HTMLDivElement, ResultadoCardProps>(func
         </p>
       </div>
 
-      {abaixoDoPiso && (
+      {abaixoDoPiso && piso && (
         <div className="mt-4 flex items-start gap-2.5 rounded-2xl bg-warning-bg px-4 py-3">
           <span className="mt-0.5 shrink-0 text-warning-text">
             <AlertTriangleIcon />
           </span>
           <p className="text-sm text-warning-text">
-            Abaixo do piso da ANTT. O mínimo pra esse trecho é {formatBRL(pisoAntt)}.
+            Abaixo do piso da ANTT ({TABELAS_ANTT[resultado.tabelaAntt!].label} ·{" "}
+            {TIPOS_CARGA_ANTT.find((t) => t.id === resultado.tipoCarga)?.label}). O mínimo pra esse
+            trecho é {formatBRL(piso.pisoTotal)} (deslocamento {formatBRL(piso.valorDeslocamento)} + carga/descarga{" "}
+            {formatBRL(piso.valorCargaDescarga)}).
+          </p>
+        </div>
+      )}
+
+      {resultado.tabelaAntt && resultado.tipoCarga && piso && !piso.disponivel && (
+        <div className="mt-4 flex items-start gap-2.5 rounded-2xl bg-warning-bg px-4 py-3">
+          <span className="mt-0.5 shrink-0 text-warning-text">
+            <AlertTriangleIcon />
+          </span>
+          <p className="text-sm text-warning-text">
+            A tabela ANTT não prevê essa combinação de eixos, tabela e tipo de carga — não foi possível
+            comparar com o piso mínimo.
           </p>
         </div>
       )}

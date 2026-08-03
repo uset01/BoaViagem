@@ -4,17 +4,16 @@ import { Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BOTTOM_NAV_HEIGHT } from "./BottomNav";
 
-// Troque o arquivo em public/images pra atualizar a foto em toda tela.
+// Troque esse caminho pra atualizar a foto em toda tela.
 // Exportada pra também ser reaproveitada na landing pública (app/page.tsx).
-export const TOP_BAND_IMAGE_SRC =
-  "/images/a-cinematic-wide-angle-photograph-taken-_DshqY5InWpeL_wmiNnMV6A_K2coD0ugSzGobu8QHNuKtw.jpg";
+export const TOP_BAND_IMAGE_SRC = "/ChatGPT Image 2 de ago. de 2026, 14_42_57.png";
 const TOP_BAND_IMAGE_POSITION = "center 32%";
 const TOP_BAND_HEIGHT = 130;
 const TOP_BAND_FADE_HEIGHT = 46;
 
 const HERO_IMAGE_POSITION = "center 60%";
 const HERO_HEIGHT = 260;
-const HERO_SHEET_OFFSET = 170;
+const HERO_SHEET_OFFSET = 130;
 const HERO_TITLE_BLOCK_HEIGHT = 100;
 
 // Nome de marca mostrado no topo de toda tela com hero — fica só aqui pra
@@ -71,7 +70,7 @@ export function ScreenShell({
       <div className="relative flex min-h-screen flex-col bg-bg">
         <div className="absolute inset-x-0 top-0 overflow-hidden" style={{ height: HERO_HEIGHT }}>
           <img
-            src={TOP_BAND_IMAGE_SRC}
+            src={encodeURI(TOP_BAND_IMAGE_SRC)}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             style={{ objectPosition: HERO_IMAGE_POSITION }}
@@ -148,7 +147,7 @@ export function ScreenShell({
       {showTopBand && (
         <div className="relative shrink-0 overflow-hidden" style={{ height: TOP_BAND_HEIGHT }}>
           <img
-            src={TOP_BAND_IMAGE_SRC}
+            src={encodeURI(TOP_BAND_IMAGE_SRC)}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             style={{ objectPosition: TOP_BAND_IMAGE_POSITION }}
