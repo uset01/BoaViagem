@@ -5,7 +5,7 @@ import { ScreenShell } from "@/components/ui/ScreenShell";
 import { Card } from "@/components/ui/Card";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
-import { BottomSheetSelect } from "@/components/ui/BottomSheetSelect";
+import { InlineSelect } from "@/components/ui/InlineSelect";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { IconCircle } from "@/components/ui/IconCircle";
 import { FuelIcon, TollIcon, WrenchIcon, FoodIcon } from "@/components/icons";
@@ -397,11 +397,12 @@ export default function CalcularPage() {
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-ink">Seu caminhão</h2>
           <Card padding="p-4">
-            <BottomSheetSelect
+            <InlineSelect
               label="Número de Eixos"
               options={OPCOES_CAMINHAO}
               value={truckType}
               onChange={(v) => setTruckType(v as TruckTypeId)}
+              placeholder="Selecione o número de eixos"
             />
           </Card>
         </section>
@@ -410,19 +411,21 @@ export default function CalcularPage() {
           <h2 className="text-sm font-bold text-ink">Piso mínimo ANTT</h2>
           <Card padding="p-4" className="space-y-3">
             <div>
-              <BottomSheetSelect
+              <InlineSelect
                 label="Tipo de frete"
                 options={OPCOES_TABELA_ANTT}
                 value={tabelaAntt}
                 onChange={(v) => setTabelaAntt(v as TabelaAntt)}
+                placeholder="Selecione o tipo de frete"
               />
               <p className="mt-1.5 text-xs text-ink-tertiary">{TABELAS_ANTT[tabelaAntt].descricao}</p>
             </div>
-            <BottomSheetSelect
+            <InlineSelect
               label="Tipo de carga"
               options={OPCOES_TIPO_CARGA}
               value={tipoCarga}
               onChange={(v) => setTipoCarga(v as TipoCargaAntt)}
+              placeholder="Selecione o tipo de carga"
               searchable
             />
           </Card>

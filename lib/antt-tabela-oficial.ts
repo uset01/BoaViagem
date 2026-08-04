@@ -109,11 +109,12 @@ export const TABELA_COEFICIENTES: Record<TabelaAntt, Record<TipoCargaAntt, Coefi
       [4.7845, 5.9154, 6.6285, 7.515, 8.2008, 8.8866, 10.066],
       [608.79, 703.16, 753.03, 820.86, 836.04, 981.39, 1072.15]
     ),
-    // REVISAR: na imagem, a linha de CCD (deslocamento) só trouxe 6 valores
-    // legíveis pra 7 colunas — falta o valor da coluna "4 eixos". Os demais
-    // vêm da coluna seguinte pra frente (por isso o desalinhamento aqui).
+    // Confirmado contra a calculadora Qualp (mesma metodologia ANTT):
+    // km=100, 4 eixos, Tabela A, Perigosa Granel Líquido → R$ 1.466,24
+    // (= 100×6,7628 + 789,96). O valor de "4 eixos" tinha sido lido
+    // errado antes (dígitos trocados com o de "5 eixos").
     perigosa_granel_liquido: linha(
-      [4.871, 6.0236, null, 7.6628, 8.3539, 9.0049, 10.2051],
+      [4.871, 6.0236, 6.7628, 7.6628, 8.3539, 9.0049, 10.2051],
       [632.58, 732.9, 789.96, 861.51, 878.16, 1013.95, 1110.41]
     ),
     perigosa_frigorificada: linha(
@@ -128,11 +129,14 @@ export const TABELA_COEFICIENTES: Record<TabelaAntt, Record<TipoCargaAntt, Coefi
       [4.3571, 5.4821, 6.2033, 7.093, 7.7758, 8.5321, 9.6501],
       [549.81, 642.55, 694.66, 763.36, 777.73, 942.48, 1016.33]
     ),
-    // REVISAR: linha com vários espaços em branco na imagem original — só 3
-    // valores de CCD e 2 de CC ficaram nítidos. Confira contra a fonte.
+    // REVISAR: só a combinação "6 eixos" foi confirmada contra a Qualp
+    // (km=100 → R$ 1.561,34 = 100×7,7652 + 784,82). "2 eixos" confirmado
+    // como indisponível ("Erro de composição"). As demais colunas (4, 5,
+    // 7, 9) ficaram com leitura contraditória na imagem original — voltei
+    // pra null em vez de manter valores que o teste real desmentiu.
     carga_granel_pressurizada: linha(
-      [null, null, null, 7.0364, null, 7.7652, 9.7444],
-      [null, null, null, null, null, 757.81, 784.82]
+      [null, null, null, null, 7.7652, null, null],
+      [null, null, null, null, 784.82, null, null]
     ),
   },
   B: {
