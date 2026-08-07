@@ -4,6 +4,10 @@ import { createServerClient } from "@supabase/ssr";
 
 const ROTAS_PROTEGIDAS = ["/calcular", "/historico", "/resumo", "/perfil"];
 
+// Duração do trial gratuito, em dias — não existe coluna própria pra isso,
+// então é calculado em cima de created_at (evita migração de schema).
+const TRIAL_DIAS = 7;
+
 function ehRotaProtegida(pathname: string): boolean {
   return ROTAS_PROTEGIDAS.some((rota) => pathname === rota || pathname.startsWith(`${rota}/`));
 }
@@ -44,12 +48,18 @@ export async function middleware(request: NextRequest) {
     // a cada navegação — por enquanto, simplicidade > performance.
     const { data: usuario } = await supabase
       .from("usuarios")
-      .select("plano, is_admin")
+      .select("plano, is_admin, created_at")
       .eq("id", user!.id)
       .maybeSingle();
+
+    const trialAindaValido =
+      usuario?.plano === "trial" &&
+      Boolean(usuario.created_at) &&
+      Date.now() - new Date(usuario.created_at as string).getTime() < TRIAL_DIAS * 24 * 60 * 60 * 1000;
+
     // is_admin libera acesso independente do plano — pra testar o app sem
     // depender de assinatura real/cancelamento na Cakto.
-    temAcessoLiberado = usuario?.is_admin === true || usuario?.plano === "trial" || usuario?.plano === "ativo";
+    temAcessoLiberado = usuario?.is_admin === true || usuario?.plano === "ativo" || trialAindaValido;
   }
 
   if (ehRotaProtegida(pathname)) {

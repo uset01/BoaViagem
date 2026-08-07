@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ExternalLink, MessageCircle } from "lucide-react";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { Card } from "@/components/ui/Card";
 import { IconCircle } from "@/components/ui/IconCircle";
@@ -31,15 +32,15 @@ const PLANO_BADGE_CLASS: Record<Plano, string> = {
   cancelado: "bg-danger-bg text-danger",
 };
 
-const PLANO_DESCRICAO: Record<Plano, string> = {
-  trial: "Plano: Trial gratuito",
-  ativo: "Assinatura ativa",
-  cancelado: "Assinatura cancelada",
-};
-
 // Reaproveita o mesmo link de checkout: pra quem já é assinante, a Cakto
-// mostra a assinatura/login em vez de pedir pagamento de novo.
+// mostra a assinatura/login em vez de pedir pagamento de novo; pra quem
+// cancelou, mostra o checkout de novo (usado no botão "Assinar novamente").
 const CAKTO_MANAGE_URL = "https://pay.cakto.com.br/3teeu9s_1003860";
+
+// TODO: número provisório — trocar pelo WhatsApp real de suporte (formato
+// wa.me: só dígitos, com código do país, sem espaços/símbolos).
+const WHATSAPP_SUPORTE_NUMERO = "5500000000000";
+const WHATSAPP_SUPORTE_URL = `https://wa.me/${WHATSAPP_SUPORTE_NUMERO}`;
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -122,22 +123,24 @@ export default function PerfilPage() {
           </div>
         </Card>
 
-        <Card padding="p-4" className="space-y-3">
+        <Card padding="px-4 py-3" className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-ink">Assinatura</p>
             <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", PLANO_BADGE_CLASS[plano])}>
               {PLANO_LABEL[plano]}
             </span>
           </div>
-          <p className="text-sm text-ink-secondary">{PLANO_DESCRICAO[plano]}</p>
           <a
             href={CAKTO_MANAGE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-1.5 rounded-full border border-divider bg-surface py-3 text-sm font-semibold text-ink"
+            className={cn(
+              "flex w-full items-center justify-center gap-1.5 rounded-full py-3 text-sm font-semibold",
+              plano === "cancelado" ? "bg-accent text-white" : "border border-divider bg-surface text-ink"
+            )}
           >
-            Gerenciar assinatura
-            <ExternalLink size={14} strokeWidth={2} className="text-ink-secondary" />
+            {plano === "cancelado" ? "Assinar novamente" : "Gerenciar assinatura"}
+            <ExternalLink size={14} strokeWidth={2} className={plano === "cancelado" ? "text-white/80" : "text-ink-secondary"} />
           </a>
 
           {plano !== "cancelado" && (
@@ -151,6 +154,22 @@ export default function PerfilPage() {
           )}
         </Card>
 
+        <section className="space-y-2">
+          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-tertiary">Ajuda</p>
+          <Card padding="p-0">
+            <a
+              href={WHATSAPP_SUPORTE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4"
+            >
+              <IconCircle icon={<MessageCircle size={18} strokeWidth={2} />} />
+              <span className="flex-1 text-sm font-semibold text-ink">Falar com suporte</span>
+              <ExternalLink size={14} strokeWidth={2} className="text-ink-tertiary" />
+            </a>
+          </Card>
+        </section>
+
         <button
           type="button"
           onClick={handleSair}
@@ -158,6 +177,15 @@ export default function PerfilPage() {
         >
           Sair
         </button>
+
+        <div className="flex items-center justify-center gap-4 pt-1">
+          <Link href="/termos" className="text-xs text-ink-tertiary underline-offset-2 hover:underline">
+            Termos de uso
+          </Link>
+          <Link href="/privacidade" className="text-xs text-ink-tertiary underline-offset-2 hover:underline">
+            Política de privacidade
+          </Link>
+        </div>
       </div>
 
       <CancelarAssinaturaSheet
