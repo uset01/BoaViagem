@@ -11,7 +11,7 @@ const TOP_BAND_IMAGE_POSITION = "center 32%";
 const TOP_BAND_HEIGHT = 130;
 const TOP_BAND_FADE_HEIGHT = 46;
 
-const HERO_IMAGE_POSITION = "center 60%";
+const HERO_IMAGE_POSITION = "center 40%";
 const HERO_HEIGHT = 260;
 const HERO_SHEET_OFFSET = 130;
 const HERO_TITLE_BLOCK_HEIGHT = 100;
