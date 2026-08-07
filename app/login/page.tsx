@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -8,6 +8,12 @@ import { Card } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/client";
 
 type Etapa = "telefone" | "codigo";
+
+// Celular costuma recarregar a aba quando a pessoa sai pro app do banco/SMS
+// pra pegar o código e volta — sem isso, perderia o telefone digitado e
+// voltaria pra estaca zero. Guarda em sessionStorage (não sensível, só o
+// telefone e em que etapa estava; some ao fechar a aba).
+const STORAGE_KEY = "boaviagem-login-em-andamento";
 
 // Supabase exige o telefone em E.164. Como o app é só em pt-BR por
 // enquanto, assume DDI 55 (Brasil) quando o usuário não digita o "+".
@@ -24,6 +30,31 @@ export default function LoginPage() {
   const [codigo, setCodigo] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Restaura telefone/etapa se a aba recarregou no meio do fluxo (só
+  // interessa restaurar quando já passou pro código — voltar pra "telefone"
+  // vazio não precisa de nada especial).
+  useEffect(() => {
+    try {
+      const salvo = sessionStorage.getItem(STORAGE_KEY);
+      if (!salvo) return;
+      const dados = JSON.parse(salvo) as { etapa?: Etapa; telefone?: string };
+      if (dados.etapa === "codigo" && dados.telefone) {
+        setTelefone(dados.telefone);
+        setEtapa("codigo");
+      }
+    } catch {
+      // sessionStorage indisponível ou dado corrompido — segue do zero
+    }
+  }, []);
+
+  useEffect(() => {
+    if (etapa === "codigo" && telefone) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ etapa, telefone }));
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, [etapa, telefone]);
 
   const telefoneValido = telefone.replace(/\D/g, "").length >= 10;
   const codigoValido = codigo.trim().length === 6;
@@ -56,6 +87,7 @@ export default function LoginPage() {
         type: "sms",
       });
       if (error) throw error;
+      sessionStorage.removeItem(STORAGE_KEY);
       router.push("/assinatura");
     } catch {
       setErro("Código inválido ou expirado. Confira e tente de novo.");

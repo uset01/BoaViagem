@@ -11,11 +11,19 @@ import { cn } from "@/lib/utils";
 // tela usa pra saber que a pessoa acabou de voltar de um pagamento.
 const CAKTO_CHECKOUT_URL = "https://pay.cakto.com.br/3teeu9s_1003860";
 
+// Guarda "estou esperando o pagamento confirmar" ANTES de sair pro checkout
+// — celular costuma recarregar a aba quando a pessoa sai pro app do banco
+// pra pagar (Pix) e volta, o que derrubaria o "?retorno=cakto" da URL e
+// faria a tela achar que é uma visita normal, sem checar o pagamento.
+const AGUARDANDO_PAGAMENTO_KEY = "boaviagem-aguardando-pagamento";
+
 type Plano = "trial" | "ativo" | "cancelado" | null;
 type Status = "carregando" | "pronto" | "erro";
 
 const POLL_INTERVAL_MS = 3000;
-const POLL_MAX_TENTATIVAS = 10;
+// Pix + webhook às vezes demora mais que meio minuto pra confirmar —
+// 40 tentativas de 3s dá 2 minutos antes de desistir de reconsultar sozinho.
+const POLL_MAX_TENTATIVAS = 40;
 
 const BENEFICIOS = ["Cálculo de lucro ilimitado", "Histórico completo de viagens", "Resumo mensal com gráficos"];
 
@@ -46,7 +54,13 @@ export default function AssinaturaPage() {
 function AssinaturaConteudo() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const voltouDaCakto = searchParams.get("retorno") === "cakto";
+  const [voltouDaCakto, setVoltouDaCakto] = useState(false);
+
+  useEffect(() => {
+    const peloParametro = searchParams.get("retorno") === "cakto";
+    const peloStorage = sessionStorage.getItem(AGUARDANDO_PAGAMENTO_KEY) === "1";
+    setVoltouDaCakto(peloParametro || peloStorage);
+  }, [searchParams]);
 
   const [status, setStatus] = useState<Status>("carregando");
   const [plano, setPlano] = useState<Plano>(null);
@@ -62,7 +76,10 @@ function AssinaturaConteudo() {
         if (cancelado) return;
         setPlano(planoAtual);
         setStatus("pronto");
-        if (planoLiberado(planoAtual)) router.push("/calcular");
+        if (planoLiberado(planoAtual)) {
+          sessionStorage.removeItem(AGUARDANDO_PAGAMENTO_KEY);
+          router.push("/calcular");
+        }
       } catch {
         if (!cancelado) setStatus("erro");
       }
@@ -85,7 +102,10 @@ function AssinaturaConteudo() {
       tentativasRef.current += 1;
       const planoAtual = await buscarPlano();
       setPlano(planoAtual);
-      if (planoLiberado(planoAtual)) router.push("/calcular");
+      if (planoLiberado(planoAtual)) {
+        sessionStorage.removeItem(AGUARDANDO_PAGAMENTO_KEY);
+        router.push("/calcular");
+      }
     }, POLL_INTERVAL_MS);
 
     return () => clearTimeout(timeout);
@@ -93,6 +113,7 @@ function AssinaturaConteudo() {
 
   function handleAssinar() {
     if (!CAKTO_CHECKOUT_URL) return;
+    sessionStorage.setItem(AGUARDANDO_PAGAMENTO_KEY, "1");
     setIndoParaCheckout(true);
     window.location.href = CAKTO_CHECKOUT_URL;
   }
