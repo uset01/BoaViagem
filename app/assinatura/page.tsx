@@ -133,24 +133,12 @@ function AssinaturaConteudo() {
     }
   }
 
-  const aguardandoConfirmacao =
-    voltouDaCakto && status === "pronto" && !planoLiberado(plano) && tentativasRef.current < POLL_MAX_TENTATIVAS;
-
   return (
     <div className="flex min-h-screen flex-col bg-bg px-5 pb-10" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <header className="mt-8 space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-tertiary">Quase lá</p>
         <h1 className="text-xl font-extrabold text-ink">Ative seu acesso</h1>
       </header>
-
-      {aguardandoConfirmacao && (
-        <Card padding="p-4" className="mt-5 flex items-center gap-3 bg-warning-bg">
-          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-warning-text" />
-          <p className="text-sm font-semibold text-warning-text">
-            Recebemos seu retorno do pagamento — confirmando, isso leva só alguns segundos.
-          </p>
-        </Card>
-      )}
 
       {status === "erro" && (
         <Card padding="p-4" className="mt-5">
