@@ -32,11 +32,6 @@ const PLANO_BADGE_CLASS: Record<Plano, string> = {
   cancelado: "bg-danger-bg text-danger",
 };
 
-// Reaproveita o mesmo link de checkout: pra quem já é assinante, a Cakto
-// mostra a assinatura/login em vez de pedir pagamento de novo; pra quem
-// cancelou, mostra o checkout de novo (usado no botão "Assinar novamente").
-const CAKTO_MANAGE_URL = "https://pay.cakto.com.br/3teeu9s_1003860";
-
 // TODO: número provisório — trocar pelo WhatsApp real de suporte (formato
 // wa.me: só dígitos, com código do país, sem espaços/símbolos).
 const WHATSAPP_SUPORTE_NUMERO = "5500000000000";
@@ -48,6 +43,8 @@ export default function PerfilPage() {
   const [sheetAberto, setSheetAberto] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [erroCancelamento, setErroCancelamento] = useState<string | null>(null);
+  const [indoParaStripe, setIndoParaStripe] = useState(false);
+  const [erroStripe, setErroStripe] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -96,6 +93,28 @@ export default function PerfilPage() {
     }
   }
 
+  // "Assinar novamente" (sem assinatura ativa) cria um novo checkout;
+  // "Gerenciar assinatura" (já é assinante) abre o portal de faturamento
+  // do Stripe, onde dá pra trocar cartão e ver faturas.
+  async function handleGerenciarOuAssinar() {
+    setIndoParaStripe(true);
+    setErroStripe(null);
+    try {
+      const supabase = createClient();
+      const nomeFuncao = plano === "cancelado" ? "criar-checkout-stripe" : "criar-portal-stripe";
+      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>(nomeFuncao);
+      if (error || !data?.url) {
+        setErroStripe(data?.error ?? "Não foi possível abrir agora. Tente novamente.");
+        setIndoParaStripe(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setErroStripe("Não foi possível abrir agora. Tente novamente.");
+      setIndoParaStripe(false);
+    }
+  }
+
   const plano = dados?.plano ?? "trial";
 
   return (
@@ -130,18 +149,22 @@ export default function PerfilPage() {
               {PLANO_LABEL[plano]}
             </span>
           </div>
-          <a
-            href={CAKTO_MANAGE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={handleGerenciarOuAssinar}
+            disabled={indoParaStripe}
             className={cn(
-              "flex w-full items-center justify-center gap-1.5 rounded-full py-3 text-sm font-semibold",
-              plano === "cancelado" ? "bg-accent text-white" : "border border-divider bg-surface text-ink"
+              "flex w-full items-center justify-center gap-1.5 rounded-full py-3 text-sm font-semibold transition-opacity",
+              plano === "cancelado" ? "bg-accent text-white" : "border border-divider bg-surface text-ink",
+              indoParaStripe && "opacity-60"
             )}
           >
-            {plano === "cancelado" ? "Assinar novamente" : "Gerenciar assinatura"}
-            <ExternalLink size={14} strokeWidth={2} className={plano === "cancelado" ? "text-white/80" : "text-ink-secondary"} />
-          </a>
+            {indoParaStripe ? "Abrindo..." : plano === "cancelado" ? "Assinar novamente" : "Gerenciar assinatura"}
+            {!indoParaStripe && (
+              <ExternalLink size={14} strokeWidth={2} className={plano === "cancelado" ? "text-white/80" : "text-ink-secondary"} />
+            )}
+          </button>
+          {erroStripe && <p className="text-center text-xs font-medium text-danger">{erroStripe}</p>}
 
           {plano !== "cancelado" && (
             <button

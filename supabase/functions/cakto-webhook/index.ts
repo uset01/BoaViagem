@@ -24,6 +24,13 @@
 // menos não nesse formato). Por enquanto, telefone é o único jeito de casar
 // o webhook com o usuário certo.
 //
+// Pagamento sem conta prévia no app: quando o telefone não bate com
+// nenhuma linha em usuarios E o evento é de ativação (pagamento aprovado),
+// a conta é criada aqui mesmo via Admin API (supabase.auth.admin.createUser)
+// e já nasce com plano "ativo" — assim, quando essa pessoa fizer login por
+// SMS depois com o mesmo número, cai direto na conta já paga, sem precisar
+// ter aberto o app antes de pagar.
+//
 // Deploy: cole esse arquivo no editor da function no Dashboard
 // (Edge Functions > cakto-webhook), com "Verify JWT" DESLIGADO — quem chama
 // aqui é a Cakto, não um usuário logado no app.
@@ -113,19 +120,47 @@ Deno.serve(async (req: Request) => {
     .or(`telefone.eq.${semCodigoPais},telefone.eq.${comCodigoPais}`)
     .maybeSingle();
 
-  if (!usuario) {
-    console.error("[cakto-webhook] não foi possível identificar o usuário pelo telefone:", telefoneCliente);
-    return new Response("Usuário não encontrado", { status: 404 });
+  let usuarioId = usuario?.id;
+
+  if (!usuarioId) {
+    // Sem conta ainda: só faz sentido criar uma pra evento de ATIVAÇÃO
+    // (pagamento de verdade). Pra evento de cancelamento sem conta
+    // correspondente não há o que fazer — só loga e ignora.
+    if (novoPlano !== "ativo") {
+      console.log(
+        "[cakto-webhook] evento de cancelamento sem conta correspondente, ignorando:",
+        telefoneCliente
+      );
+      return new Response("ok (sem conta pra cancelar)", { status: 200 });
+    }
+
+    const { data: criado, error: erroCriar } = await supabase.auth.admin.createUser({
+      phone: comCodigoPais,
+      phone_confirm: true,
+    });
+
+    if (erroCriar || !criado?.user) {
+      console.error("[cakto-webhook] falha ao criar conta pro telefone", comCodigoPais, ":", erroCriar);
+      return new Response("Erro ao criar usuário", { status: 500 });
+    }
+
+    console.log("[cakto-webhook] conta criada automaticamente pro telefone:", comCodigoPais);
+    usuarioId = criado.user.id;
   }
 
-  const { error } = await supabase
-    .from("usuarios")
-    .update({
+  // Upsert (não update): se a trigger handle_new_user já inseriu a linha
+  // (conta recém-criada acima) ou se ela já existia, os dois casos viram
+  // uma atualização; só falha esse insert se a trigger não existir/rodar.
+  const { error } = await supabase.from("usuarios").upsert(
+    {
+      id: usuarioId,
+      telefone: comCodigoPais,
       plano: novoPlano,
       ...(subscriptionId ? { cakto_subscription_id: subscriptionId } : {}),
       updated_at: new Date().toISOString(),
-    })
-    .eq("id", usuario.id);
+    },
+    { onConflict: "id" }
+  );
 
   if (error) {
     console.error("[cakto-webhook] erro ao atualizar usuário:", error);

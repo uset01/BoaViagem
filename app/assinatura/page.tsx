@@ -6,15 +6,15 @@ import { Card } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-// No painel da Cakto, configure a URL de retorno pós-pagamento pra
-// "<seu-domínio>/assinatura?retorno=cakto" — é esse parâmetro que essa
-// tela usa pra saber que a pessoa acabou de voltar de um pagamento.
-const CAKTO_CHECKOUT_URL = "https://pay.cakto.com.br/3teeu9s_1003860";
+// A função criar-checkout-stripe já manda success_url com
+// "?retorno=stripe" — é esse parâmetro que essa tela usa pra saber que a
+// pessoa acabou de voltar de um pagamento.
+const RETORNO_CHECKOUT_PARAM = "stripe";
 
 // Guarda "estou esperando o pagamento confirmar" ANTES de sair pro checkout
 // — celular costuma recarregar a aba quando a pessoa sai pro app do banco
-// pra pagar (Pix) e volta, o que derrubaria o "?retorno=cakto" da URL e
-// faria a tela achar que é uma visita normal, sem checar o pagamento.
+// pra pagar e volta, o que derrubaria o "?retorno=stripe" da URL e faria a
+// tela achar que é uma visita normal, sem checar o pagamento.
 const AGUARDANDO_PAGAMENTO_KEY = "boaviagem-aguardando-pagamento";
 
 type Plano = "trial" | "ativo" | "cancelado" | null;
@@ -28,7 +28,7 @@ const POLL_MAX_TENTATIVAS = 40;
 const BENEFICIOS = ["Cálculo de lucro ilimitado", "Histórico completo de viagens", "Resumo mensal com gráficos"];
 
 function planoLiberado(plano: Plano): boolean {
-  return plano === "trial" || plano === "ativo";
+  return plano === "ativo";
 }
 
 async function buscarPlano(): Promise<Plano> {
@@ -57,7 +57,7 @@ function AssinaturaConteudo() {
   const [voltouDaCakto, setVoltouDaCakto] = useState(false);
 
   useEffect(() => {
-    const peloParametro = searchParams.get("retorno") === "cakto";
+    const peloParametro = searchParams.get("retorno") === RETORNO_CHECKOUT_PARAM;
     const peloStorage = sessionStorage.getItem(AGUARDANDO_PAGAMENTO_KEY) === "1";
     setVoltouDaCakto(peloParametro || peloStorage);
   }, [searchParams]);
@@ -65,6 +65,7 @@ function AssinaturaConteudo() {
   const [status, setStatus] = useState<Status>("carregando");
   const [plano, setPlano] = useState<Plano>(null);
   const [indoParaCheckout, setIndoParaCheckout] = useState(false);
+  const [erroCheckout, setErroCheckout] = useState<string | null>(null);
   const tentativasRef = useRef(0);
 
   useEffect(() => {
@@ -111,11 +112,25 @@ function AssinaturaConteudo() {
     return () => clearTimeout(timeout);
   }, [voltouDaCakto, status, plano, router]);
 
-  function handleAssinar() {
-    if (!CAKTO_CHECKOUT_URL) return;
-    sessionStorage.setItem(AGUARDANDO_PAGAMENTO_KEY, "1");
+  async function handleAssinar() {
     setIndoParaCheckout(true);
-    window.location.href = CAKTO_CHECKOUT_URL;
+    setErroCheckout(null);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>(
+        "criar-checkout-stripe"
+      );
+      if (error || !data?.url) {
+        setErroCheckout(data?.error ?? "Não foi possível iniciar o checkout. Tente novamente.");
+        setIndoParaCheckout(false);
+        return;
+      }
+      sessionStorage.setItem(AGUARDANDO_PAGAMENTO_KEY, "1");
+      window.location.href = data.url;
+    } catch {
+      setErroCheckout("Não foi possível iniciar o checkout. Tente novamente.");
+      setIndoParaCheckout(false);
+    }
   }
 
   const aguardandoConfirmacao =
@@ -132,7 +147,7 @@ function AssinaturaConteudo() {
         <Card padding="p-4" className="mt-5 flex items-center gap-3 bg-warning-bg">
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-warning-text" />
           <p className="text-sm font-semibold text-warning-text">
-            Recebemos seu retorno do pagamento — confirmando com a Cakto, isso leva só alguns segundos.
+            Recebemos seu retorno do pagamento — confirmando, isso leva só alguns segundos.
           </p>
         </Card>
       )}
@@ -148,11 +163,9 @@ function AssinaturaConteudo() {
         <div>
           <p className="text-sm font-semibold text-ink-secondary">Plano BoaViagem</p>
           <p className="mt-1 text-4xl font-extrabold text-ink">
-            R$ 29,90<span className="text-base font-medium text-ink-secondary">/mês</span>
+            R$ 24,99<span className="text-base font-medium text-ink-secondary">/mês</span>
           </p>
-          <p className="mt-1 text-sm text-ink-secondary">
-            7 dias grátis, depois R$ 29,90/mês. Cancele quando quiser.
-          </p>
+          <p className="mt-1 text-sm text-ink-secondary">Cancele quando quiser.</p>
         </div>
 
         <ul className="space-y-2 border-t border-divider pt-4 text-sm text-ink-secondary">
@@ -165,19 +178,16 @@ function AssinaturaConteudo() {
       <button
         type="button"
         onClick={handleAssinar}
-        disabled={indoParaCheckout || !CAKTO_CHECKOUT_URL}
+        disabled={indoParaCheckout}
         className={cn(
           "mt-6 w-full rounded-full bg-accent py-4 text-base font-bold text-white transition-opacity",
-          (indoParaCheckout || !CAKTO_CHECKOUT_URL) && "opacity-60"
+          indoParaCheckout && "opacity-60"
         )}
       >
         {indoParaCheckout ? "Abrindo checkout..." : "Assinar agora"}
       </button>
-      <p className="mt-3 text-center text-xs text-ink-tertiary">
-        {CAKTO_CHECKOUT_URL
-          ? "Você será redirecionado pro checkout seguro da Cakto."
-          : "Link de checkout da Cakto ainda não configurado."}
-      </p>
+      {erroCheckout && <p className="mt-3 text-center text-sm font-medium text-danger">{erroCheckout}</p>}
+      <p className="mt-3 text-center text-xs text-ink-tertiary">Você será redirecionado pro checkout seguro.</p>
     </div>
   );
 }
