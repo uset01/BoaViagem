@@ -54,12 +54,12 @@ export default function AssinaturaPage() {
 function AssinaturaConteudo() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [voltouDaCakto, setVoltouDaCakto] = useState(false);
+  const [voltouDoCheckout, setVoltouDoCheckout] = useState(false);
 
   useEffect(() => {
     const peloParametro = searchParams.get("retorno") === RETORNO_CHECKOUT_PARAM;
     const peloStorage = sessionStorage.getItem(AGUARDANDO_PAGAMENTO_KEY) === "1";
-    setVoltouDaCakto(peloParametro || peloStorage);
+    setVoltouDoCheckout(peloParametro || peloStorage);
   }, [searchParams]);
 
   const [status, setStatus] = useState<Status>("carregando");
@@ -91,12 +91,12 @@ function AssinaturaConteudo() {
     };
   }, [router]);
 
-  // Voltou do checkout da Cakto mas o plano ainda não foi liberado — o
+  // Voltou do checkout do Stripe mas o plano ainda não foi liberado — o
   // webhook pode levar alguns segundos pra chegar e atualizar a tabela.
   // Em vez de deixar a pessoa numa tela de "sem acesso", fica reconsultando
   // por um tempo antes de desistir.
   useEffect(() => {
-    if (!voltouDaCakto || status !== "pronto" || planoLiberado(plano)) return;
+    if (!voltouDoCheckout || status !== "pronto" || planoLiberado(plano)) return;
     if (tentativasRef.current >= POLL_MAX_TENTATIVAS) return;
 
     const timeout = setTimeout(async () => {
@@ -110,7 +110,7 @@ function AssinaturaConteudo() {
     }, POLL_INTERVAL_MS);
 
     return () => clearTimeout(timeout);
-  }, [voltouDaCakto, status, plano, router]);
+  }, [voltouDoCheckout, status, plano, router]);
 
   async function handleAssinar() {
     setIndoParaCheckout(true);

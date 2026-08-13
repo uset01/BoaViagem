@@ -5,17 +5,13 @@
 -- =========================================================================
 -- usuarios
 -- Uma linha por usuário autenticado (auth.users), guarda nome/telefone de
--- exibição + o status da assinatura que o webhook da Cakto mantém em dia.
+-- exibição + o status da assinatura que o webhook do Stripe mantém em dia.
 -- =========================================================================
 create table if not exists public.usuarios (
   id uuid primary key references auth.users (id) on delete cascade,
   nome text,
   telefone text,
   plano text not null default 'trial' check (plano in ('trial', 'ativo', 'cancelado')),
-  -- Colunas da Cakto (histórico — não usadas mais pra cobrança nova desde a
-  -- migração pro Stripe, mantidas por causa de contas antigas já vinculadas).
-  cakto_customer_id text,
-  cakto_subscription_id text,
   stripe_customer_id text,
   stripe_subscription_id text,
   -- Libera acesso (middleware) e testes de cancelamento independente do
@@ -29,6 +25,9 @@ create table if not exists public.usuarios (
 alter table public.usuarios add column if not exists is_admin boolean not null default false;
 alter table public.usuarios add column if not exists stripe_customer_id text;
 alter table public.usuarios add column if not exists stripe_subscription_id text;
+-- Colunas da Cakto, sem uso desde a migração pro Stripe.
+alter table public.usuarios drop column if exists cakto_customer_id;
+alter table public.usuarios drop column if exists cakto_subscription_id;
 
 -- Cria a linha em usuarios automaticamente no primeiro login (telefone via OTP).
 create or replace function public.handle_new_user()

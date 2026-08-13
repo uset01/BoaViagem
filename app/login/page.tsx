@@ -9,11 +9,14 @@ import { createClient } from "@/lib/supabase/client";
 
 type Etapa = "telefone" | "codigo";
 
-// Celular costuma recarregar a aba quando a pessoa sai pro app do banco/SMS
-// pra pegar o código e volta — sem isso, perderia o telefone digitado e
-// voltaria pra estaca zero. Guarda em sessionStorage (não sensível, só o
-// telefone e em que etapa estava; some ao fechar a aba).
+// Celular costuma matar o processo do navegador quando a pessoa sai pro
+// app de Mensagens pra pegar o código e volta — sessionStorage não segura
+// isso de forma confiável (some junto com o processo em muitos aparelhos),
+// então usa localStorage. Não é sensível, só o telefone e em que etapa
+// estava. Expira sozinho depois de alguns minutos pra não restaurar uma
+// etapa "código" velha com um código já vencido.
 const STORAGE_KEY = "boaviagem-login-em-andamento";
+const STORAGE_VALIDADE_MS = 10 * 60 * 1000;
 
 // Supabase exige o telefone em E.164. Como o app é só em pt-BR por
 // enquanto, assume DDI 55 (Brasil) quando o usuário não digita o "+".
@@ -36,23 +39,26 @@ export default function LoginPage() {
   // vazio não precisa de nada especial).
   useEffect(() => {
     try {
-      const salvo = sessionStorage.getItem(STORAGE_KEY);
+      const salvo = localStorage.getItem(STORAGE_KEY);
       if (!salvo) return;
-      const dados = JSON.parse(salvo) as { etapa?: Etapa; telefone?: string };
-      if (dados.etapa === "codigo" && dados.telefone) {
+      const dados = JSON.parse(salvo) as { etapa?: Etapa; telefone?: string; salvoEm?: number };
+      const expirado = !dados.salvoEm || Date.now() - dados.salvoEm > STORAGE_VALIDADE_MS;
+      if (!expirado && dados.etapa === "codigo" && dados.telefone) {
         setTelefone(dados.telefone);
         setEtapa("codigo");
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch {
-      // sessionStorage indisponível ou dado corrompido — segue do zero
+      // localStorage indisponível ou dado corrompido — segue do zero
     }
   }, []);
 
   useEffect(() => {
     if (etapa === "codigo" && telefone) {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ etapa, telefone }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ etapa, telefone, salvoEm: Date.now() }));
     } else {
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, [etapa, telefone]);
 
@@ -87,7 +93,7 @@ export default function LoginPage() {
         type: "sms",
       });
       if (error) throw error;
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
       router.push("/assinatura");
     } catch {
       setErro("Código inválido ou expirado. Confira e tente de novo.");
