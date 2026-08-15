@@ -72,7 +72,7 @@ create table if not exists public.viagens (
   origem text,
   destino text,
   distancia_km integer not null,
-  tipo_caminhao text not null check (tipo_caminhao in ('toco', 'truck', 'carreta', 'bitrem')),
+  tipo_caminhao text not null check (tipo_caminhao in ('toco', 'truck', 'carreta', 'bitrem', 'rodotrem')),
   valor_frete numeric(10, 2) not null,
   custo_diesel numeric(10, 2) not null default 0,
   custo_pedagio numeric(10, 2) not null default 0,
@@ -85,6 +85,12 @@ create table if not exists public.viagens (
 
 create index if not exists viagens_user_id_created_at_idx
   on public.viagens (user_id, created_at desc);
+
+-- Adiciona "rodotrem" (9 eixos) na lista aceita, pra quem já tinha a tabela
+-- criada antes com o check antigo.
+alter table public.viagens drop constraint if exists viagens_tipo_caminhao_check;
+alter table public.viagens add constraint viagens_tipo_caminhao_check
+  check (tipo_caminhao in ('toco', 'truck', 'carreta', 'bitrem', 'rodotrem'));
 
 alter table public.viagens enable row level security;
 

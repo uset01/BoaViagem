@@ -1,4 +1,4 @@
-export type TruckTypeId = "toco" | "truck" | "carreta" | "bitrem";
+export type TruckTypeId = "toco" | "truck" | "carreta" | "bitrem" | "rodotrem";
 
 export interface TruckType {
   id: TruckTypeId;
@@ -13,6 +13,7 @@ export const TRUCK_TYPES: TruckType[] = [
   { id: "truck", label: "Truck", eixos: 3, consumoKmPorLitro: 6, iconSrc: "/icones/truck.png" },
   { id: "carreta", label: "Carreta", eixos: 5, consumoKmPorLitro: 3.2, iconSrc: "/icones/carreta.png" },
   { id: "bitrem", label: "Bitrem", eixos: 7, consumoKmPorLitro: 2.6, iconSrc: "/icones/bitrem.png" },
+  { id: "rodotrem", label: "Rodotrem", eixos: 9, consumoKmPorLitro: 2.3, iconSrc: "/icones/rodotrem.png" },
 ];
 
 export function getTruckType(id: TruckTypeId): TruckType {

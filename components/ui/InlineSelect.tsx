@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 export interface InlineSelectOption {
   label: string;
   value: string;
+  description?: string;
 }
 
 interface InlineSelectProps {
@@ -110,12 +111,19 @@ export function InlineSelect({
                 type="button"
                 onClick={() => handleSelect(option.value)}
                 className={cn(
-                  "flex w-full items-center justify-between px-4 py-2.5 text-left text-[15px] transition-colors",
-                  active ? "bg-accent/10 font-medium text-accent" : "text-ink hover:bg-surface-muted"
+                  "flex w-full items-start justify-between gap-2 px-4 py-2.5 text-left text-[15px] transition-colors",
+                  active ? "bg-accent/10 text-accent" : "text-ink hover:bg-surface-muted"
                 )}
               >
-                {option.label}
-                {active && <Check size={16} strokeWidth={2} className="shrink-0 text-accent" />}
+                <span className="min-w-0">
+                  <span className={cn("block", active && "font-medium")}>{option.label}</span>
+                  {option.description && (
+                    <span className={cn("mt-0.5 block text-xs", active ? "text-accent/80" : "text-ink-tertiary")}>
+                      {option.description}
+                    </span>
+                  )}
+                </span>
+                {active && <Check size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-accent" />}
               </button>
             );
           })}

@@ -36,6 +36,7 @@ import { ResultadoCard, type ResultadoCalculo, type SaveState } from "@/componen
 const OPCOES_TABELA_ANTT = (Object.keys(TABELAS_ANTT) as TabelaAntt[]).map((id) => ({
   label: TABELAS_ANTT[id].label,
   value: id,
+  description: TABELAS_ANTT[id].descricao,
 }));
 
 // O seletor "Número de Eixos" (em "Seu caminhão") mostra os tipos de

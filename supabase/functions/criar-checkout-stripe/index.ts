@@ -15,7 +15,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const STRIPE_PRICE_ID = "price_1U1wPfFTJ0HEhGNUVZEcFb9L"; // Plano BoaViagem, R$24,99/mês
+const STRIPE_PRICE_ID = "price_1U1wMGFTJ0HEhGNUFeMyLR5Y"; // Plano BoaViagem, R$24,99/mês (modo live)
 const APP_URL = "https://boa-viagem.vercel.app";
 
 // Chamado pelo navegador (supabase.functions.invoke) — precisa responder o
