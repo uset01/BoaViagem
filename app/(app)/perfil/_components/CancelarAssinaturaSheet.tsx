@@ -22,8 +22,8 @@ export function CancelarAssinaturaSheet({
       <div className="px-5 pb-6 pt-3">
         <p className="text-center text-[15px] font-semibold text-ink">Cancelar sua assinatura?</p>
         <p className="mt-1 text-center text-sm text-ink-secondary">
-          Você perde o acesso ao calcular, histórico e resumo assim que cancelar — essa ação não pode ser
-          desfeita.
+          Isso cancela a cobrança e exclui sua conta e todo o histórico de viagens permanentemente — essa ação não
+          pode ser desfeita.
         </p>
 
         <div className="mt-6 flex gap-3">

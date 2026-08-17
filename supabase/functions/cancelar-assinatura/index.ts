@@ -1,15 +1,16 @@
-// Cancela a assinatura do usuário logado no Stripe e marca o plano como
-// "cancelado" no Supabase. Chamado pelo botão "Cancelar assinatura" em
-// /perfil via supabase.functions.invoke() — isso já manda o JWT do usuário
-// logado no header Authorization automaticamente.
+// Cancela a assinatura do usuário logado no Stripe e EXCLUI a conta
+// inteira no Supabase (auth.users — cascateia pra usuarios, viagens e
+// valores_medios via "on delete cascade" no schema). Chamado pelo botão
+// "Cancelar assinatura" em /perfil via supabase.functions.invoke() — isso
+// já manda o JWT do usuário logado no header Authorization automaticamente.
+//
+// Irreversível: perde todo o histórico de viagens junto com a assinatura.
+// O sheet de confirmação em /perfil avisa isso antes de chamar aqui.
 //
 // Diferente dos webhooks: essa function é chamada pelo NOSSO app, por
 // um usuário logado — "Verify JWT" deve ficar LIGADO no deploy (padrão).
 //
-// Cancela IMEDIATAMENTE (não espera o fim do período já pago) — mesmo
-// comportamento que tinha com a Cakto. Se preferir deixar o acesso até o
-// fim do período pago, trocar o DELETE abaixo por um update com
-// cancel_at_period_end=true.
+// Cancela IMEDIATAMENTE no Stripe (não espera o fim do período já pago).
 //
 // Precisa do secret STRIPE_SECRET_KEY (mesmo das outras functions Stripe).
 
@@ -60,9 +61,8 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   // Conta admin: simula o botão funcionando (pra testar o fluxo/UI quantas
-  // vezes quiser) sem chamar o Stripe de verdade e sem alterar o `plano` —
-  // is_admin já libera o acesso independente disso, então não há nada real
-  // pra "desfazer" depois.
+  // vezes quiser) sem chamar o Stripe de verdade e SEM excluir a conta —
+  // senão toda conta usada pra testar esse botão se apagaria sozinha.
   if (usuario?.is_admin) {
     return respostaJson({ status: "cancelado" }, 200);
   }
@@ -91,18 +91,18 @@ Deno.serve(async (req: Request) => {
     return respostaJson({ error: "Erro ao conectar com o Stripe." }, 500);
   }
 
-  // Atualiza otimisticamente — o webhook customer.subscription.deleted
-  // também vai confirmar isso depois, mas não faz sentido esperar ele pra
-  // dar feedback pro usuário. Precisa do service_role porque o usuário não
-  // pode mais alterar o próprio `plano` diretamente (RLS só permite leitura).
+  // Exclui a conta inteira (precisa do service_role pra isso — Admin API).
+  // A exclusão de auth.users cascateia pra usuarios, viagens e
+  // valores_medios sozinha, via "on delete cascade" no schema.sql.
   const supabaseServico = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const { error: updateError } = await supabaseServico
-    .from("usuarios")
-    .update({ plano: "cancelado", updated_at: new Date().toISOString() })
-    .eq("id", userData.user.id);
+  const { error: deleteError } = await supabaseServico.auth.admin.deleteUser(userData.user.id);
 
-  if (updateError) {
-    console.error("[cancelar-assinatura] cancelado no Stripe mas erro ao atualizar Supabase:", updateError);
+  if (deleteError) {
+    console.error("[cancelar-assinatura] cancelado no Stripe mas erro ao excluir a conta:", deleteError);
+    return respostaJson(
+      { error: "Assinatura cancelada, mas houve um erro ao excluir sua conta. Fale com o suporte." },
+      500
+    );
   }
 
   return respostaJson({ status: "cancelado" }, 200);

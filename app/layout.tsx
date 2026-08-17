@@ -8,9 +8,20 @@ const manrope = Manrope({
   variable: "--font-manrope",
 });
 
+const DESCRICAO =
+  "Calcule o lucro ou prejuízo do frete antes de aceitar, comparando com o piso mínimo da ANTT.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://boaviagem.app"),
   title: "Lucro na Estrada",
-  description: "Lucro na Estrada",
+  description: DESCRICAO,
+  openGraph: {
+    title: "Lucro na Estrada",
+    description: DESCRICAO,
+    siteName: "Lucro na Estrada",
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

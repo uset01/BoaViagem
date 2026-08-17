@@ -74,6 +74,8 @@ export default function PerfilPage() {
     router.push("/");
   }
 
+  // Cancelar exclui a conta inteira (Stripe + Supabase) — não sobra sessão
+  // nem dado pra mostrar depois, então sai e volta pra tela inicial.
   async function handleConfirmarCancelamento() {
     setCancelando(true);
     setErroCancelamento(null);
@@ -84,8 +86,8 @@ export default function PerfilPage() {
         setErroCancelamento(data?.error ?? "Não foi possível cancelar agora. Tente novamente.");
         return;
       }
-      setDados((prev) => (prev ? { ...prev, plano: "cancelado" } : prev));
-      setSheetAberto(false);
+      await supabase.auth.signOut();
+      router.push("/");
     } catch {
       setErroCancelamento("Não foi possível cancelar agora. Tente novamente.");
     } finally {
