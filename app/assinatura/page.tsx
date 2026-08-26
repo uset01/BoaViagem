@@ -150,11 +150,10 @@ function AssinaturaConteudo() {
       <Card padding="p-6" className="mt-5 space-y-4">
         <div>
           <p className="text-sm font-semibold text-ink-secondary">Plano BoaViagem</p>
-          <p className="mt-1 text-4xl font-extrabold text-ink">
-            R$ 24,99<span className="text-base font-medium text-ink-secondary">/mês</span>
+          <p className="mt-1 text-4xl font-extrabold text-ink">7 dias grátis</p>
+          <p className="mt-1 text-sm text-ink-secondary">
+            Depois, R$ 24,99<span className="text-ink-tertiary">/mês</span>. Cancele quando quiser.
           </p>
-          <p className="mt-1 text-sm font-semibold text-accent">7 dias grátis, depois R$ 24,99/mês.</p>
-          <p className="mt-1 text-sm text-ink-secondary">Cancele quando quiser.</p>
         </div>
 
         <ul className="space-y-2 border-t border-divider pt-4 text-sm text-ink-secondary">

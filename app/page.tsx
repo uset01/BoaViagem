@@ -154,14 +154,14 @@ export default function LandingPage() {
             <div>
               <p className="text-sm font-semibold text-ink-secondary">Plano BoaViagem</p>
 
-              <div className="mt-3 flex items-center justify-center gap-2">
+              <p className="mt-3 text-5xl font-extrabold text-ink">7 dias grátis</p>
+
+              <div className="mt-2 flex items-center justify-center gap-2">
                 <span className="rounded-full bg-danger-bg px-2 py-0.5 text-xs font-bold text-danger">-29%</span>
                 <span className="text-sm font-medium text-ink-tertiary line-through">R$ 34,99</span>
+                <span className="text-sm font-semibold text-ink-secondary">R$ 24,99/mês</span>
               </div>
-              <p className="mt-1 text-5xl font-extrabold text-ink">
-                R$ 24,99<span className="text-sm font-medium text-ink-secondary">/mês</span>
-              </p>
-              <p className="mt-1 text-sm text-ink-secondary">Cancele quando quiser.</p>
+              <p className="mt-1 text-sm text-ink-secondary">Depois do teste. Cancele quando quiser.</p>
 
               <p className="mt-3 text-xs font-medium text-warning-text">
                 Essa condição de lançamento pode acabar a qualquer momento.
@@ -171,7 +171,7 @@ export default function LandingPage() {
               href="/login"
               className="block w-full rounded-full bg-accent py-3.5 text-center text-sm font-bold text-white"
             >
-              Assinar e calcular agora
+              Testar grátis por 7 dias
             </Link>
           </div>
         </div>
