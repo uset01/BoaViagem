@@ -60,6 +60,7 @@ Deno.serve(async (req: Request) => {
     mode: "subscription",
     "line_items[0][price]": STRIPE_PRICE_ID,
     "line_items[0][quantity]": "1",
+    "subscription_data[trial_period_days]": "7",
     client_reference_id: userData.user.id,
     success_url: `${APP_URL}/assinatura?retorno=stripe`,
     cancel_url: `${APP_URL}/assinatura`,

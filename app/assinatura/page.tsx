@@ -153,6 +153,7 @@ function AssinaturaConteudo() {
           <p className="mt-1 text-4xl font-extrabold text-ink">
             R$ 24,99<span className="text-base font-medium text-ink-secondary">/mês</span>
           </p>
+          <p className="mt-1 text-sm font-semibold text-accent">7 dias grátis, depois R$ 24,99/mês.</p>
           <p className="mt-1 text-sm text-ink-secondary">Cancele quando quiser.</p>
         </div>
 
@@ -172,7 +173,7 @@ function AssinaturaConteudo() {
           indoParaCheckout && "opacity-60"
         )}
       >
-        {indoParaCheckout ? "Abrindo checkout..." : "Assinar agora"}
+        {indoParaCheckout ? "Abrindo checkout..." : "Começar teste grátis de 7 dias"}
       </button>
       {erroCheckout && <p className="mt-3 text-center text-sm font-medium text-danger">{erroCheckout}</p>}
       <p className="mt-3 text-center text-xs text-ink-tertiary">Você será redirecionado pro checkout seguro.</p>
