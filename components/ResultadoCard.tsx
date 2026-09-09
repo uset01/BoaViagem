@@ -78,7 +78,7 @@ export const ResultadoCard = forwardRef<HTMLDivElement, ResultadoCardProps>(func
         className={cn("mt-5 rounded-[24px] p-5 text-center", lucrativo ? "bg-success-bg" : "bg-danger-bg")}
       >
         <p className={cn("text-xs font-bold uppercase tracking-wide", lucrativo ? "text-success" : "text-danger")}>
-          Resultado
+          Lucro
         </p>
         <p
           className={cn(

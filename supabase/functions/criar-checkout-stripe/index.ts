@@ -16,7 +16,19 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const STRIPE_PRICE_ID = "price_1U1wMGFTJ0HEhGNUFeMyLR5Y"; // Plano BoaViagem, R$24,99/mês (modo live)
-const APP_URL = "https://boa-viagem.vercel.app";
+
+// O checkout precisa voltar pro MESMO domínio de onde saiu: o cookie de sessão
+// vale por origem, então devolver quem entrou por boaviagem.app no domínio da
+// Vercel derruba a sessão e joga a pessoa na tela de login depois de pagar.
+// Allowlist em vez do Origin cru pra ninguém usar essa function pra mandar o
+// usuário pro site dele depois do checkout.
+const ORIGENS_PERMITIDAS = ["https://boaviagem.app", "https://boa-viagem.vercel.app"];
+const APP_URL_PADRAO = "https://boaviagem.app";
+
+function urlDoApp(req: Request): string {
+  const origem = req.headers.get("Origin");
+  return origem && ORIGENS_PERMITIDAS.includes(origem) ? origem : APP_URL_PADRAO;
+}
 
 // Chamado pelo navegador (supabase.functions.invoke) — precisa responder o
 // preflight CORS (OPTIONS) antes do POST de verdade, senão o navegador nunca
@@ -55,6 +67,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY")!;
+  const appUrl = urlDoApp(req);
 
   const corpo = new URLSearchParams({
     mode: "subscription",
@@ -62,8 +75,8 @@ Deno.serve(async (req: Request) => {
     "line_items[0][quantity]": "1",
     "subscription_data[trial_period_days]": "7",
     client_reference_id: userData.user.id,
-    success_url: `${APP_URL}/assinatura?retorno=stripe`,
-    cancel_url: `${APP_URL}/assinatura`,
+    success_url: `${appUrl}/assinatura?retorno=stripe`,
+    cancel_url: `${appUrl}/assinatura`,
   });
   if (userData.user.email) corpo.set("customer_email", userData.user.email);
 

@@ -77,18 +77,20 @@ Deno.serve(async (req: Request) => {
       return new Response("ok (sem referência)", { status: 200 });
     }
 
-    const { error } = await supabase
-      .from("usuarios")
-      .update({
-        plano: "ativo",
-        stripe_customer_id: session.customer ?? null,
-        stripe_subscription_id: session.subscription ?? null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", usuarioId);
+    // upsert, não update: se a linha ainda não existe (trigger
+    // on_auth_user_created que não rodou, conta criada antes dele existir), um
+    // update afeta 0 linhas e retorna sucesso — quem pagou fica sem acesso e
+    // nada aparece no log.
+    const { error } = await supabase.from("usuarios").upsert({
+      id: usuarioId,
+      plano: "ativo",
+      stripe_customer_id: session.customer ?? null,
+      stripe_subscription_id: session.subscription ?? null,
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
-      console.error("[stripe-webhook] erro ao ativar usuário:", error);
+      console.error("[stripe-webhook] erro ao ativar usuário:", usuarioId, error);
       return new Response("Erro ao atualizar", { status: 500 });
     }
     return new Response("ok", { status: 200 });
@@ -104,14 +106,22 @@ Deno.serve(async (req: Request) => {
       return new Response("ok (status ignorado)", { status: 200 });
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("usuarios")
       .update({ plano: novoPlano, updated_at: new Date().toISOString() })
-      .eq("stripe_subscription_id", subscription.id);
+      .eq("stripe_subscription_id", subscription.id)
+      .select("id");
 
     if (error) {
       console.error("[stripe-webhook] erro ao atualizar assinatura:", error);
       return new Response("Erro ao atualizar", { status: 500 });
+    }
+    // Aqui não dá pra usar upsert (a busca é pelo id da assinatura, não pela
+    // chave primária), então só loga: uma assinatura órfã — conta excluída, id
+    // dessincronizado — sumiria calada, já que update sem match não é erro.
+    // Responde 200 assim mesmo porque reenviar não faria a linha aparecer.
+    if (!data?.length) {
+      console.error("[stripe-webhook] nenhuma linha para a assinatura:", subscription.id);
     }
     return new Response("ok", { status: 200 });
   }

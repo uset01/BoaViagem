@@ -8,7 +8,16 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const APP_URL = "https://boa-viagem.vercel.app";
+// Mesmo motivo do criar-checkout-stripe: o portal precisa devolver a pessoa no
+// domínio de onde ela saiu, senão o cookie de sessão (que vale por origem) não
+// acompanha e ela cai na tela de login. Allowlist em vez do Origin cru.
+const ORIGENS_PERMITIDAS = ["https://boaviagem.app", "https://boa-viagem.vercel.app"];
+const APP_URL_PADRAO = "https://boaviagem.app";
+
+function urlDoApp(req: Request): string {
+  const origem = req.headers.get("Origin");
+  return origem && ORIGENS_PERMITIDAS.includes(origem) ? origem : APP_URL_PADRAO;
+}
 
 // Chamado pelo navegador (supabase.functions.invoke) — precisa responder o
 // preflight CORS (OPTIONS) antes do POST de verdade, senão o navegador nunca
@@ -65,7 +74,7 @@ Deno.serve(async (req: Request) => {
     },
     body: new URLSearchParams({
       customer: usuario.stripe_customer_id,
-      return_url: `${APP_URL}/perfil`,
+      return_url: `${urlDoApp(req)}/perfil`,
     }),
   });
 
