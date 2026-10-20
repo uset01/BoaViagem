@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/Card";
+import { BENEFICIOS_PLANO } from "@/lib/plano";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -24,8 +25,6 @@ const POLL_INTERVAL_MS = 3000;
 // Pix + webhook às vezes demora mais que meio minuto pra confirmar —
 // 40 tentativas de 3s dá 2 minutos antes de desistir de reconsultar sozinho.
 const POLL_MAX_TENTATIVAS = 40;
-
-const BENEFICIOS = ["Cálculo de lucro ilimitado", "Histórico completo de viagens", "Resumo mensal com gráficos"];
 
 function planoLiberado(plano: Plano): boolean {
   return plano === "ativo";
@@ -157,7 +156,7 @@ function AssinaturaConteudo() {
         </div>
 
         <ul className="space-y-2 border-t border-divider pt-4 text-sm text-ink-secondary">
-          {BENEFICIOS.map((beneficio) => (
+          {BENEFICIOS_PLANO.map((beneficio) => (
             <li key={beneficio}>• {beneficio}</li>
           ))}
         </ul>

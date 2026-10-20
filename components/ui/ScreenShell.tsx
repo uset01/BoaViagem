@@ -97,7 +97,7 @@ export function ScreenShell({
               style={{ paddingTop: "env(safe-area-inset-top)" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-header.png" alt={APP_BRAND_NAME} className="mt-3 h-5 w-auto" />
+              <img src="/logo-boaviagem.png" alt={APP_BRAND_NAME} className="mt-3 h-5 w-auto" />
             </div>
           )}
 

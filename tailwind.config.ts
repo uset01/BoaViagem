@@ -13,6 +13,7 @@ const config: Config = {
       },
       colors: {
         bg: "#F5F6F8",
+        navy: "#0A1220",
         surface: "#FFFFFF",
         "surface-muted": "#EDEFF3",
         ink: "#14161A",
